@@ -1,22 +1,71 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.0",
-  "description": "A HIT feature pack",
+  "version": "1.0.1",
+  "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./pages/*": {
+      "types": "./dist/pages/*.d.ts",
+      "import": "./dist/pages/*.js",
+      "require": "./dist/pages/*.js",
+      "default": "./dist/pages/*.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/audit.d.ts",
+      "import": "./dist/schema/audit.js",
+      "require": "./dist/schema/audit.js",
+      "default": "./dist/schema/audit.js"
+    },
+    "./server/api/*": {
+      "types": "./dist/server/api/*.d.ts",
+      "import": "./dist/server/api/*.js",
+      "require": "./dist/server/api/*.js",
+      "default": "./dist/server/api/*.js"
+    },
+    "./server/lib/*": {
+      "types": "./dist/server/lib/*.d.ts",
+      "import": "./dist/server/lib/*.js",
+      "require": "./dist/server/lib/*.js",
+      "default": "./dist/server/lib/*.js"
+    }
+  },
   "files": [
     "dist",
+    "src",
     "feature-pack.yaml"
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "react": "^18.0.0"
+    "@hit/feature-pack-dashboard-shell": "*",
+    "@hit/sdk": "*",
+    "@hit/ui-kit": "*",
+    "drizzle-orm": "^0.38.0",
+    "lucide-react": "^0.460.0",
+    "next": "15.5.9",
+    "react": "19.2.3"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
-  }
+    "@hit/feature-pack-dashboard-shell": "file:../hit-feature-pack-erp-shell-core",
+    "@hit/sdk": "file:../../hit-sdks/hit-sdk-typescript",
+    "@hit/ui-kit": "file:../../packages/hit-ui-kit-ts",
+    "@types/node": "^20",
+    "@types/react": "^19.0.0",
+    "drizzle-orm": "^0.38.0",
+    "lucide-react": "^0.460.0",
+    "next": "^15.5.9",
+    "typescript": "^5"
+  },
+  "license": "MIT"
 }

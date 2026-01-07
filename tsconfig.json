@@ -19,7 +19,13 @@
     "rootDir": "./src",
     "types": [
       "node"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/lib/*": [
+        "./src/lib-stubs/*"
+      ]
+    }
   },
   "include": [
     "src/**/*"

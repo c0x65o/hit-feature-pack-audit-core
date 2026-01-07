@@ -1,4 +1,51 @@
 name: audit-core
-description: A HIT feature pack
-routes: []
-nav: []
+description: Audit Core feature pack (global audit events + admin UI + embeddable audit trail)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUTES - Frontend page routes
+# ─────────────────────────────────────────────────────────────────────────────
+routes:
+  - path: /admin/audit
+    page: AuditLogList
+    roles: [admin]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NAVIGATION - Sidebar/topbar items
+# ─────────────────────────────────────────────────────────────────────────────
+nav:
+  - id: audit
+    label: Audit Logs
+    path: /admin/audit
+    icon: ClipboardList
+    group: system
+    weight: 910
+    showWhen: authenticated
+    roles: [admin]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SCHEMA - Drizzle ORM table definitions
+# ─────────────────────────────────────────────────────────────────────────────
+schema:
+  source: src/schema/audit.ts
+  exports:
+    - auditEvents
+    - AuditActorType
+    - AuditEvent
+    - InsertAuditEvent
+
+# ─────────────────────────────────────────────────────────────────────────────
+# API ROUTES - Backend endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+api:
+  routes:
+    - path: /api/audit
+      methods: [GET]
+      handler: "@hit/feature-pack-audit-core/server/api/audit"
+      description: "List audit events (admin-only; filterable by entity kind/id, actor, action, correlation)"
+
+requires:
+  modules: []
+
+dependencies:
+  feature_packs:
+    - name: dashboard-shell
