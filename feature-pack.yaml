@@ -48,4 +48,4 @@ requires:
 
 dependencies:
   feature_packs:
-    - name: dashboard-shell
+    - name: erp-shell-core
