@@ -39,35 +39,16 @@ BEGIN
     );
   END IF;
 
-  -- Helpful indexes (idempotent guards)
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'audit_events_entity_idx'
-  ) THEN
-    CREATE INDEX audit_events_entity_idx ON audit_events (entity_kind, entity_id);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'audit_events_created_at_idx'
-  ) THEN
-    CREATE INDEX audit_events_created_at_idx ON audit_events (created_at DESC);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'audit_events_actor_idx'
-  ) THEN
-    CREATE INDEX audit_events_actor_idx ON audit_events (actor_id);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'audit_events_correlation_idx'
-  ) THEN
-    CREATE INDEX audit_events_correlation_idx ON audit_events (correlation_id);
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'audit_events_pack_idx'
-  ) THEN
-    CREATE INDEX audit_events_pack_idx ON audit_events (pack_name);
-  END IF;
+  -- Helpful indexes (idempotent, schema-safe)
+  --
+  -- IMPORTANT:
+  -- HIT uses per-project schemas + search_path (e.g. hitcents_erp,public).
+  -- Don't hardcode schemaname='public' when checking pg_indexes; just use
+  -- CREATE INDEX IF NOT EXISTS so it works in any schema.
+  CREATE INDEX IF NOT EXISTS audit_events_entity_idx ON audit_events (entity_kind, entity_id);
+  CREATE INDEX IF NOT EXISTS audit_events_created_at_idx ON audit_events (created_at DESC);
+  CREATE INDEX IF NOT EXISTS audit_events_actor_idx ON audit_events (actor_id);
+  CREATE INDEX IF NOT EXISTS audit_events_correlation_idx ON audit_events (correlation_id);
+  CREATE INDEX IF NOT EXISTS audit_events_pack_idx ON audit_events (pack_name);
 END $$;
 
