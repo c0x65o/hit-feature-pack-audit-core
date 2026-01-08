@@ -1,6 +1,6 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -58,8 +58,8 @@
   },
   "devDependencies": {
     "@hit/feature-pack-erp-shell-core": "file:../hit-feature-pack-erp-shell-core",
-    "@hit/sdk": "file:../../hit-sdks/hit-sdk-typescript",
-    "@hit/ui-kit": "file:../../packages/hit-ui-kit-ts",
+    "@hit/sdk": "file:../../../hit-sdks/hit-sdk-typescript",
+    "@hit/ui-kit": "file:../../../packages/hit-ui-kit-ts",
     "@types/node": "^20",
     "@types/react": "^19.0.0",
     "drizzle-orm": "^0.38.0",
