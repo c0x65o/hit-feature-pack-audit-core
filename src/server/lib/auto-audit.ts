@@ -235,10 +235,11 @@ export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolea
       }
     }
 
-    // Build Level 2 details object
+    // Build Level 2.5 details object (observability payloads)
     const details: Record<string, unknown> = {
       responseStatus: input.responseStatus,
       durationMs: input.durationMs ?? null,
+      success: isSuccess,
     };
 
     // Include request body (truncated if large)
@@ -246,8 +247,10 @@ export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolea
       details.requestBody = truncatePayload(input.requestBody);
     }
 
-    // For errors, include response body (often contains error message)
-    if (!isSuccess && input.responseBody) {
+    // Include response body when available.
+    // This enables "Level 2.5" snapshots (diff later without DB reads) when handlers return the updated entity.
+    // Still truncated to avoid bloating the audit table.
+    if (input.responseBody !== undefined && input.responseBody !== null) {
       details.responseBody = truncatePayload(input.responseBody);
     }
 
