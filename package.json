@@ -1,6 +1,6 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -62,6 +62,7 @@
     "react": "19.2.3"
   },
   "devDependencies": {
+    "@hit/feature-pack-stubs": "file:../../../packages/hit-feature-pack-stubs",
     "@hit/feature-pack-erp-shell-core": "file:../hit-feature-pack-erp-shell-core",
     "@hit/sdk": "file:../../../hit-sdks/hit-sdk-typescript",
     "@hit/ui-kit": "file:../../../packages/hit-ui-kit-ts",
