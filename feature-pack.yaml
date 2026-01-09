@@ -43,6 +43,16 @@ api:
       handler: "@hit/feature-pack-audit-core/server/api/audit"
       description: "List audit events (admin-only; filterable by entity kind/id, actor, action, correlation)"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFIG - Feature pack configuration options
+# ─────────────────────────────────────────────────────────────────────────────
+config:
+  schema:
+    auto_audit:
+      type: boolean
+      default: true
+      description: "Automatically audit all write operations (POST/PUT/PATCH/DELETE) via dispatcher. When true, handlers don't need to call writeAuditEvent manually for basic audit coverage."
+
 requires:
   modules: []
 
