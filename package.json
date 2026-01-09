@@ -1,36 +1,41 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./pages/*": {
+      "development": "./src/pages/*.tsx",
       "types": "./dist/pages/*.d.ts",
       "import": "./dist/pages/*.js",
       "require": "./dist/pages/*.js",
       "default": "./dist/pages/*.js"
     },
     "./schema": {
+      "development": "./src/schema/audit.ts",
       "types": "./dist/schema/audit.d.ts",
       "import": "./dist/schema/audit.js",
       "require": "./dist/schema/audit.js",
       "default": "./dist/schema/audit.js"
     },
     "./server/api/*": {
+      "development": "./src/server/api/*.ts",
       "types": "./dist/server/api/*.d.ts",
       "import": "./dist/server/api/*.js",
       "require": "./dist/server/api/*.js",
       "default": "./dist/server/api/*.js"
     },
     "./server/lib/*": {
+      "development": "./src/server/lib/*.ts",
       "types": "./dist/server/lib/*.d.ts",
       "import": "./dist/server/lib/*.js",
       "require": "./dist/server/lib/*.js",
@@ -67,5 +72,6 @@
     "next": "^15.5.9",
     "typescript": "^5"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "sideEffects": false
 }
