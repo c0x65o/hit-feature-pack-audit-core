@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, desc, eq, gte, ilike, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, lte, sql, or } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
 import { auditEvents } from '@/lib/feature-pack-schemas';
 import { getUserId, isAdmin } from '../auth';
@@ -21,11 +21,17 @@ function jsonError(message: string, status = 400) {
  * - actorId?: string
  * - correlationId?: string
  * - packName?: string
+ * - method?: string (HTTP method: GET, POST, PUT, PATCH, DELETE)
  * - q?: string (searches summary)
  * - from?: ISO string (createdAt >= from)
  * - to?: ISO string (createdAt <= to)
  * - page?: number (default 1)
  * - pageSize?: number (default 25, max 100)
+ *
+ * Error/latency filtering (uses details JSONB):
+ * - status?: "4xx" | "5xx" | "error" (4xx+5xx) | exact number
+ * - minDuration?: number (ms) - only events slower than this
+ * - maxDuration?: number (ms) - only events faster than this
  */
 export async function GET(request: NextRequest) {
   const userId = getUserId(request);
@@ -39,9 +45,15 @@ export async function GET(request: NextRequest) {
   const actorId = String(url.searchParams.get('actorId') || '').trim();
   const correlationId = String(url.searchParams.get('correlationId') || '').trim();
   const packName = String(url.searchParams.get('packName') || '').trim();
+  const method = String(url.searchParams.get('method') || '').trim().toUpperCase();
   const q = String(url.searchParams.get('q') || '').trim();
   const from = String(url.searchParams.get('from') || '').trim();
   const to = String(url.searchParams.get('to') || '').trim();
+
+  // Error/latency filters
+  const status = String(url.searchParams.get('status') || '').trim();
+  const minDuration = url.searchParams.get('minDuration');
+  const maxDuration = url.searchParams.get('maxDuration');
 
   const page = Math.max(1, Number(url.searchParams.get('page') || 1) || 1);
   const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get('pageSize') || 25) || 25));
@@ -54,6 +66,7 @@ export async function GET(request: NextRequest) {
   if (actorId) whereParts.push(eq((auditEvents as any).actorId, actorId));
   if (correlationId) whereParts.push(eq((auditEvents as any).correlationId, correlationId));
   if (packName) whereParts.push(eq((auditEvents as any).packName, packName));
+  if (method) whereParts.push(eq((auditEvents as any).method, method));
   if (q) whereParts.push(ilike((auditEvents as any).summary, `%${q}%`));
 
   if (from) {
@@ -63,6 +76,25 @@ export async function GET(request: NextRequest) {
   if (to) {
     const d = new Date(to);
     if (!Number.isNaN(d.getTime())) whereParts.push(lte((auditEvents as any).createdAt, d));
+  }
+
+  // Status filtering on details->responseStatus
+  if (status === '4xx') {
+    whereParts.push(sql`(details->>'responseStatus')::int >= 400 AND (details->>'responseStatus')::int < 500`);
+  } else if (status === '5xx') {
+    whereParts.push(sql`(details->>'responseStatus')::int >= 500`);
+  } else if (status === 'error') {
+    whereParts.push(sql`(details->>'responseStatus')::int >= 400`);
+  } else if (status && !isNaN(Number(status))) {
+    whereParts.push(sql`(details->>'responseStatus')::int = ${Number(status)}`);
+  }
+
+  // Duration filtering on details->durationMs
+  if (minDuration && !isNaN(Number(minDuration))) {
+    whereParts.push(sql`(details->>'durationMs')::float >= ${Number(minDuration)}`);
+  }
+  if (maxDuration && !isNaN(Number(maxDuration))) {
+    whereParts.push(sql`(details->>'durationMs')::float <= ${Number(maxDuration)}`);
   }
 
   const where = whereParts.length ? and(...whereParts) : undefined;

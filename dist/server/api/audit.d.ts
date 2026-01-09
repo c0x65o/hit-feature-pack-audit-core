@@ -11,11 +11,17 @@ export declare const runtime = "nodejs";
  * - actorId?: string
  * - correlationId?: string
  * - packName?: string
+ * - method?: string (HTTP method: GET, POST, PUT, PATCH, DELETE)
  * - q?: string (searches summary)
  * - from?: ISO string (createdAt >= from)
  * - to?: ISO string (createdAt <= to)
  * - page?: number (default 1)
  * - pageSize?: number (default 25, max 100)
+ *
+ * Error/latency filtering (uses details JSONB):
+ * - status?: "4xx" | "5xx" | "error" (4xx+5xx) | exact number
+ * - minDuration?: number (ms) - only events slower than this
+ * - maxDuration?: number (ms) - only events faster than this
  */
 export declare function GET(request: NextRequest): Promise<NextResponse<{
     error: string;

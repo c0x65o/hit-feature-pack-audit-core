@@ -2,10 +2,12 @@
  * Auto-Audit: Automatic audit logging for API mutations.
  *
  * Called by the feature-pack-api-dispatcher when a write operation (POST/PUT/PATCH/DELETE)
- * succeeds but the handler didn't write its own audit event.
+ * completes and the handler didn't write its own audit event.
  *
- * This provides "Level 1" audit coverage: every mutation gets logged with basic info,
- * even if the handler doesn't explicitly call writeAuditEvent.
+ * Level 1: Basic audit (entityKind, entityId, action, summary)
+ * Level 2: Full observability (+ requestBody, durationMs, responseStatus)
+ *
+ * Logs ALL writes (success AND failure) for full observability.
  */
 
 import { pgTable, uuid, varchar, text, jsonb, timestamp, index, pgEnum } from 'drizzle-orm/pg-core';
@@ -44,6 +46,8 @@ const auditEvents = pgTable(
  */
 function methodToAction(method: string): string {
   switch (method.toUpperCase()) {
+    case 'GET':
+      return 'read';
     case 'POST':
       return 'created';
     case 'PUT':
@@ -139,28 +143,48 @@ function buildSummary(
 }
 
 export interface AutoAuditInput {
-  /** Response status code - only logs for 2xx */
+  /** Response status code (logs both success and failure for observability) */
   responseStatus: number;
-  /** Response body (for extracting created entity ID on POST) */
+  /** Response body (for extracting created entity ID on POST, or error details) */
   responseBody?: unknown;
+  /** Request body (Level 2: what was sent) */
+  requestBody?: unknown;
+  /** Duration in milliseconds (Level 2: how long it took) */
+  durationMs?: number;
   /** Actor ID (user email/ID) */
   actorId?: string | null;
 }
 
 /**
+ * Truncate large payloads to avoid bloating the audit table.
+ */
+function truncatePayload(payload: unknown, maxLength = 4000): unknown {
+  if (payload === null || payload === undefined) return null;
+  try {
+    const str = JSON.stringify(payload);
+    if (str.length <= maxLength) return payload;
+    // Return truncated indicator
+    return {
+      _truncated: true,
+      _originalLength: str.length,
+      _preview: str.slice(0, maxLength),
+    };
+  } catch {
+    return { _error: 'Could not serialize payload' };
+  }
+}
+
+/**
  * Write an automatic audit event using the current audit context.
  *
- * Called by the dispatcher after a successful write operation when the handler
+ * Called by the dispatcher after a write operation when the handler
  * didn't write its own audit event. This provides baseline audit coverage.
  *
- * @returns true if audit was written, false if skipped (e.g., not a 2xx response)
+ * Level 2: Logs ALL writes (success and failure) with full observability data.
+ *
+ * @returns true if audit was written, false if skipped
  */
 export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolean> {
-  // Only audit successful responses
-  if (input.responseStatus < 200 || input.responseStatus >= 300) {
-    return false;
-  }
-
   const ctx = getAuditContext();
   if (!ctx) {
     console.warn('[auto-audit] No audit context available, skipping auto-audit');
@@ -172,9 +196,16 @@ export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolea
     return false;
   }
 
-  // Only audit write operations
   const method = ctx.method?.toUpperCase();
-  if (!method || !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+  if (!method) {
+    return false;
+  }
+
+  const isWrite = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  const isError = input.responseStatus >= 400;
+
+  // Audit: all writes (success or failure) OR any request that errors (4xx/5xx)
+  if (!isWrite && !isError) {
     return false;
   }
 
@@ -184,15 +215,45 @@ export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolea
     const dbModule = await import('@/lib/db');
     const db = dbModule.getDb();
 
-    const action = methodToAction(method);
+    const isSuccess = input.responseStatus >= 200 && input.responseStatus < 300;
+    const isClientError = input.responseStatus >= 400 && input.responseStatus < 500;
+    const isServerError = input.responseStatus >= 500;
+
+    // Determine action based on method and outcome
+    let action = methodToAction(method);
+    if (!isSuccess) {
+      action = isClientError ? `${action}_rejected` : `${action}_failed`;
+    }
+
     let { kind: entityKind, id: entityId } = extractEntityFromPath(ctx.path);
 
     // For POST responses, try to extract the created entity ID from response
-    if (method === 'POST' && !entityId && input.responseBody) {
+    if (method === 'POST' && !entityId && input.responseBody && isSuccess) {
       const body = input.responseBody as Record<string, unknown>;
       if (body.id && typeof body.id === 'string') {
         entityId = body.id;
       }
+    }
+
+    // Build Level 2 details object
+    const details: Record<string, unknown> = {
+      responseStatus: input.responseStatus,
+      durationMs: input.durationMs ?? null,
+    };
+
+    // Include request body (truncated if large)
+    if (input.requestBody !== undefined && input.requestBody !== null) {
+      details.requestBody = truncatePayload(input.requestBody);
+    }
+
+    // For errors, include response body (often contains error message)
+    if (!isSuccess && input.responseBody) {
+      details.responseBody = truncatePayload(input.responseBody);
+    }
+
+    // Mark slow requests (>500ms)
+    if (input.durationMs && input.durationMs > 500) {
+      details.isSlow = true;
     }
 
     const summary = buildSummary(action, entityKind, entityId, ctx.packName);
@@ -202,7 +263,7 @@ export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolea
       entityId,
       action,
       summary,
-      details: null, // Basic auto-audit doesn't capture request/response details
+      details,
       actorId: input.actorId ?? ctx.actorId ?? 'system',
       actorName: null,
       actorType: 'user',
