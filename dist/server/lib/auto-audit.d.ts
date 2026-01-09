@@ -37,6 +37,10 @@ declare function singularize(word: string): string;
  * Build a human-readable summary for the audit event.
  */
 declare function buildSummary(action: string, entityKind: string, entityId: string | null, packName: string): string;
+export interface SlowQueryRecord {
+    sql: string;
+    durationMs: number;
+}
 export interface AutoAuditInput {
     /** Response status code (logs both success and failure for observability) */
     responseStatus: number;
@@ -48,6 +52,12 @@ export interface AutoAuditInput {
     durationMs?: number;
     /** Actor ID (user email/ID) */
     actorId?: string | null;
+    /** Database time in milliseconds (Level 3: timing breakdown) */
+    dbTimeMs?: number;
+    /** External module call time in milliseconds (Level 3: timing breakdown) */
+    moduleTimeMs?: number;
+    /** Slow queries with full SQL (Level 3: query observability) */
+    slowQueries?: SlowQueryRecord[];
 }
 /**
  * Write an automatic audit event using the current audit context.

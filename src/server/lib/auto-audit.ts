@@ -142,6 +142,11 @@ function buildSummary(
   return `${actionVerb} ${entityKind}`;
 }
 
+export interface SlowQueryRecord {
+  sql: string;
+  durationMs: number;
+}
+
 export interface AutoAuditInput {
   /** Response status code (logs both success and failure for observability) */
   responseStatus: number;
@@ -153,6 +158,12 @@ export interface AutoAuditInput {
   durationMs?: number;
   /** Actor ID (user email/ID) */
   actorId?: string | null;
+  /** Database time in milliseconds (Level 3: timing breakdown) */
+  dbTimeMs?: number;
+  /** External module call time in milliseconds (Level 3: timing breakdown) */
+  moduleTimeMs?: number;
+  /** Slow queries with full SQL (Level 3: query observability) */
+  slowQueries?: SlowQueryRecord[];
 }
 
 /**
@@ -241,6 +252,21 @@ export async function writeAutoAuditEvent(input: AutoAuditInput): Promise<boolea
       durationMs: input.durationMs ?? null,
       success: isSuccess,
     };
+
+    // Level 3: Timing breakdown (DB vs module vs other)
+    if (input.dbTimeMs != null) {
+      details.dbTimeMs = input.dbTimeMs;
+    }
+    if (input.moduleTimeMs != null) {
+      details.moduleTimeMs = input.moduleTimeMs;
+    }
+    if (input.slowQueries && input.slowQueries.length > 0) {
+      // Limit to top 5 slowest queries to avoid bloating
+      const topSlowQueries = [...input.slowQueries]
+        .sort((a, b) => b.durationMs - a.durationMs)
+        .slice(0, 5);
+      details.slowQueries = topSlowQueries;
+    }
 
     // Include request body (truncated if large)
     if (input.requestBody !== undefined && input.requestBody !== null) {

@@ -198,6 +198,20 @@ export async function writeAutoAuditEvent(input) {
             durationMs: input.durationMs ?? null,
             success: isSuccess,
         };
+        // Level 3: Timing breakdown (DB vs module vs other)
+        if (input.dbTimeMs != null) {
+            details.dbTimeMs = input.dbTimeMs;
+        }
+        if (input.moduleTimeMs != null) {
+            details.moduleTimeMs = input.moduleTimeMs;
+        }
+        if (input.slowQueries && input.slowQueries.length > 0) {
+            // Limit to top 5 slowest queries to avoid bloating
+            const topSlowQueries = [...input.slowQueries]
+                .sort((a, b) => b.durationMs - a.durationMs)
+                .slice(0, 5);
+            details.slowQueries = topSlowQueries;
+        }
         // Include request body (truncated if large)
         if (input.requestBody !== undefined && input.requestBody !== null) {
             details.requestBody = truncatePayload(input.requestBody);
