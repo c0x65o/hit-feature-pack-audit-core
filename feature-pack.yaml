@@ -1,4 +1,5 @@
 name: audit-core
+title: System Audit
 description: Audit Core feature pack (global audit events + admin UI + embeddable audit trail)
 
 # ─────────────────────────────────────────────────────────────────────────────

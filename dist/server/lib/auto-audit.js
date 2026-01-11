@@ -141,6 +141,33 @@ function truncatePayload(payload, maxLength = 4000) {
         return { _error: 'Could not serialize payload' };
     }
 }
+function truncateText(s, maxLength = 160) {
+    const trimmed = s.trim();
+    if (trimmed.length <= maxLength)
+        return trimmed;
+    return trimmed.slice(0, maxLength - 1) + '…';
+}
+function extractErrorHint(responseBody) {
+    if (responseBody === null || responseBody === undefined)
+        return null;
+    if (typeof responseBody === 'string')
+        return responseBody.trim() || null;
+    if (typeof responseBody !== 'object')
+        return String(responseBody);
+    const obj = responseBody;
+    const candidates = [
+        obj.error,
+        obj.message,
+        obj.detail,
+        obj.exception?.message,
+        obj.exception?.name,
+    ];
+    for (const c of candidates) {
+        if (typeof c === 'string' && c.trim())
+            return c.trim();
+    }
+    return null;
+}
 /**
  * Write an automatic audit event using the current audit context.
  *
@@ -226,7 +253,12 @@ export async function writeAutoAuditEvent(input) {
         if (input.durationMs && input.durationMs > 500) {
             details.isSlow = true;
         }
-        const summary = buildSummary(action, entityKind, entityId, ctx.packName);
+        let summary = buildSummary(action, entityKind, entityId, ctx.packName);
+        if (!isSuccess) {
+            const hint = extractErrorHint(input.responseBody);
+            if (hint)
+                summary = `${summary} — ${truncateText(hint)}`;
+        }
         await db.insert(auditEvents).values({
             entityKind,
             entityId,
