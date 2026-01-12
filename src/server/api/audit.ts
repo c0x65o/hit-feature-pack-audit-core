@@ -1,14 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, desc, eq, gte, ilike, lte, sql, or } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, lte, sql, or, inArray } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
-import { auditEvents } from '@/lib/feature-pack-schemas';
-import { getUserId, isAdmin } from '../auth';
+import { auditEvents, userOrgAssignments } from '@/lib/feature-pack-schemas';
+import { getUserId, extractUserFromRequest } from '../auth';
+import { resolveAuditCoreScopeMode } from '../lib/scope-mode';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+async function fetchUserOrgScopeIds(db: any, userKey: string): Promise<{
+  divisionIds: string[];
+  departmentIds: string[];
+  locationIds: string[];
+}> {
+  const rows = await db
+    .select({
+      divisionId: userOrgAssignments.divisionId,
+      departmentId: userOrgAssignments.departmentId,
+      locationId: userOrgAssignments.locationId,
+    })
+    .from(userOrgAssignments)
+    .where(eq(userOrgAssignments.userKey, userKey));
+
+  const divisionIds: string[] = [];
+  const departmentIds: string[] = [];
+  const locationIds: string[] = [];
+
+  for (const r of rows as any[]) {
+    if (r.divisionId && !divisionIds.includes(r.divisionId)) divisionIds.push(r.divisionId);
+    if (r.departmentId && !departmentIds.includes(r.departmentId)) departmentIds.push(r.departmentId);
+    if (r.locationId && !locationIds.includes(r.locationId)) locationIds.push(r.locationId);
+  }
+
+  return { divisionIds, departmentIds, locationIds };
 }
 
 /**
@@ -34,10 +62,13 @@ function jsonError(message: string, status = 400) {
  * - maxDuration?: number (ms) - only events faster than this
  */
 export async function GET(request: NextRequest) {
-  const userId = getUserId(request);
-  if (!userId) return jsonError('Unauthorized', 401);
-  if (!isAdmin(request)) return jsonError('Forbidden', 403);
+  const user = extractUserFromRequest(request);
+  if (!user || !user.sub) return jsonError('Unauthorized', 401);
 
+  // Resolve scope mode for read access
+  const mode = await resolveAuditCoreScopeMode(request, { verb: 'read' });
+
+  const db = getDb();
   const url = new URL(request.url);
   const entityKind = String(url.searchParams.get('entityKind') || '').trim();
   const entityId = String(url.searchParams.get('entityId') || '').trim();
@@ -60,6 +91,68 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * pageSize;
 
   const whereParts: any[] = [];
+
+  // Apply scope-based filtering (explicit branching on none/own/ldd/any)
+  if (mode === 'none') {
+    // Explicit deny: return empty results (fail-closed but non-breaking for list UI)
+    whereParts.push(sql<boolean>`false`);
+  } else if (mode === 'own') {
+    // Only show events where the current user is the actor
+    if (user.sub) {
+      whereParts.push(eq((auditEvents as any).actorId, user.sub));
+    } else {
+      // No user ID, deny access
+      whereParts.push(sql<boolean>`false`);
+    }
+  } else if (mode === 'ldd') {
+    // Show events where:
+    // 1. The current user is the actor (own)
+    // 2. The actor's user has matching L/D/D assignments
+    const scopeIds = await fetchUserOrgScopeIds(db, user.sub);
+    
+    const ownCondition = user.sub ? eq((auditEvents as any).actorId, user.sub) : sql<boolean>`false`;
+    
+    // For LDD matching, check if the actor's user has matching assignments
+    const lddParts: any[] = [];
+    if (scopeIds.divisionIds.length) {
+      lddParts.push(
+        sql`exists (
+          select 1 from ${userOrgAssignments}
+          where ${userOrgAssignments.userKey} = ${(auditEvents as any).actorId}
+            and ${userOrgAssignments.divisionId} in (${sql.join(scopeIds.divisionIds.map(id => sql`${id}`), sql`, `)})
+        )`
+      );
+    }
+    if (scopeIds.departmentIds.length) {
+      lddParts.push(
+        sql`exists (
+          select 1 from ${userOrgAssignments}
+          where ${userOrgAssignments.userKey} = ${(auditEvents as any).actorId}
+            and ${userOrgAssignments.departmentId} in (${sql.join(scopeIds.departmentIds.map(id => sql`${id}`), sql`, `)})
+        )`
+      );
+    }
+    if (scopeIds.locationIds.length) {
+      lddParts.push(
+        sql`exists (
+          select 1 from ${userOrgAssignments}
+          where ${userOrgAssignments.userKey} = ${(auditEvents as any).actorId}
+            and ${userOrgAssignments.locationId} in (${sql.join(scopeIds.locationIds.map(id => sql`${id}`), sql`, `)})
+        )`
+      );
+    }
+    
+    if (lddParts.length > 0) {
+      whereParts.push(or(ownCondition, or(...lddParts)!)!);
+    } else {
+      // No LDD assignments, fall back to own only
+      whereParts.push(ownCondition);
+    }
+  } else if (mode === 'any') {
+    // No scoping - show all events
+  }
+
+  // Apply query filters
   if (entityKind) whereParts.push(eq((auditEvents as any).entityKind, entityKind));
   if (entityId) whereParts.push(eq((auditEvents as any).entityId, entityId));
   if (action) whereParts.push(eq((auditEvents as any).action, action));
@@ -98,8 +191,6 @@ export async function GET(request: NextRequest) {
   }
 
   const where = whereParts.length ? and(...whereParts) : undefined;
-
-  const db = getDb();
 
   const countRows = await db
     .select({ count: sql<number>`count(*)`.as('count') })

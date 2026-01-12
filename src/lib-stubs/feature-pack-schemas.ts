@@ -5,3 +5,4 @@
  * schema aggregation. Packs can still typecheck by treating these as `any`.
  */
 export const auditEvents: any = {};
+export const userOrgAssignments: any = {};

@@ -5,4 +5,5 @@
  * schema aggregation. Packs can still typecheck by treating these as `any`.
  */
 export declare const auditEvents: any;
+export declare const userOrgAssignments: any;
 //# sourceMappingURL=feature-pack-schemas.d.ts.map

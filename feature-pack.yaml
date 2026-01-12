@@ -8,7 +8,9 @@ description: Audit Core feature pack (global audit events + admin UI + embeddabl
 routes:
   - path: /admin/audit
     page: AuditLogList
-    roles: [admin]
+    roles: []
+    default_roles_allow: [admin]
+    authz: { entity: auditEvents, verb: read }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NAVIGATION - Sidebar/topbar items
@@ -60,3 +62,34 @@ requires:
 dependencies:
   feature_packs:
     - name: erp-shell-core
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PERMISSIONS - Action definitions (for admin-core permissions UI + runtime checks)
+# ─────────────────────────────────────────────────────────────────────────────
+permissions:
+  actions:
+    # Scope Policy Tree: audit-core (global).
+    #
+    # Scope modes:
+    # - none: deny all access for this verb/entity (hide pages + block APIs)
+    # - any: ignore scope (read everything)
+    # - own: only events where actorId matches current user
+    # - ldd: events where actorId matches current user OR the actor's user has matching L/D/D
+    #
+    # These are mutually exclusive per node; the Security Groups UI renders them as dropdowns.
+    - key: audit-core.read.scope.none
+      label: "Audit Core Read Scope = None"
+      description: "Deny all audit event read access."
+      default_enabled: false
+    - key: audit-core.read.scope.any
+      label: "Audit Core Read Scope = Any"
+      description: "Read all audit events regardless of actor."
+      default_enabled: false
+    - key: audit-core.read.scope.own
+      label: "Audit Core Read Scope = Own"
+      description: "Read only audit events where you are the actor."
+      default_enabled: false
+    - key: audit-core.read.scope.ldd
+      label: "Audit Core Read Scope = LDD"
+      description: "Read audit events where you are the actor, or where the actor matches your L/D/D scope."
+      default_enabled: false
