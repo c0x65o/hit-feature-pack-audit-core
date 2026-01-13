@@ -89,7 +89,3 @@ permissions:
       label: "Audit Core Read Scope = Own"
       description: "Read only audit events where you are the actor."
       default_enabled: false
-    - key: audit-core.read.scope.ldd
-      label: "Audit Core Read Scope = LDD"
-      description: "Read audit events where you are the actor, or where the actor matches your L/D/D scope."
-      default_enabled: false
