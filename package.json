@@ -1,6 +1,6 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -52,8 +52,12 @@
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
+  "dependencies": {
+    "@hit/feature-pack-auth-core": "file:../hit-feature-pack-auth-core"
+  },
   "peerDependencies": {
     "@hit/feature-pack-erp-shell-core": "*",
+    "@hit/feature-pack-auth-core": "*",
     "@hit/sdk": "*",
     "@hit/ui-kit": "*",
     "drizzle-orm": "^0.38.0",
