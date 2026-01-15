@@ -4,6 +4,17 @@ export type WriteAuditEventInput = {
     action: string;
     summary: string;
     details?: Record<string, unknown> | null;
+    changes?: Record<string, unknown> | unknown[] | null;
+    eventType?: string | null;
+    outcome?: 'success' | 'failure' | 'denied' | 'error' | null;
+    targetKind?: string | null;
+    targetId?: string | null;
+    targetName?: string | null;
+    sessionId?: string | null;
+    authMethod?: string | null;
+    mfaMethod?: string | null;
+    errorCode?: string | null;
+    errorMessage?: string | null;
     actorId: string;
     actorName?: string | null;
     actorType?: 'user' | 'system' | 'api';

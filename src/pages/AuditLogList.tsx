@@ -16,6 +16,9 @@ type AuditItem = {
   actorType: string;
   correlationId: string | null;
   packName: string | null;
+  eventType: string | null;
+  outcome: string | null;
+  sessionId: string | null;
   createdAt: string;
 };
 
@@ -34,6 +37,10 @@ export function AuditLogList(props: { onNavigate?: (path: string) => void }) {
   const [entityKind, setEntityKind] = React.useState('');
   const [entityId, setEntityId] = React.useState('');
   const [action, setAction] = React.useState('');
+  const [eventType, setEventType] = React.useState('');
+  const [outcome, setOutcome] = React.useState('');
+  const [actorType, setActorType] = React.useState('');
+  const [sessionId, setSessionId] = React.useState('');
   const [q, setQ] = React.useState('');
 
   const load = React.useCallback(async () => {
@@ -44,6 +51,10 @@ export function AuditLogList(props: { onNavigate?: (path: string) => void }) {
       if (entityKind.trim()) sp.set('entityKind', entityKind.trim());
       if (entityId.trim()) sp.set('entityId', entityId.trim());
       if (action.trim()) sp.set('action', action.trim());
+      if (eventType.trim()) sp.set('eventType', eventType.trim());
+      if (outcome.trim()) sp.set('outcome', outcome.trim());
+      if (actorType.trim()) sp.set('actorType', actorType.trim());
+      if (sessionId.trim()) sp.set('sessionId', sessionId.trim());
       if (q.trim()) sp.set('q', q.trim());
       sp.set('page', '1');
       sp.set('pageSize', '50');
@@ -57,7 +68,7 @@ export function AuditLogList(props: { onNavigate?: (path: string) => void }) {
     } finally {
       setLoading(false);
     }
-  }, [entityKind, entityId, action, q]);
+  }, [entityKind, entityId, action, eventType, outcome, actorType, sessionId, q]);
 
   React.useEffect(() => {
     load();
@@ -80,7 +91,14 @@ export function AuditLogList(props: { onNavigate?: (path: string) => void }) {
       }
     >
       <Card>
-        <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: 10 }}>
+        <div
+          style={{
+            padding: 16,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto',
+            gap: 10,
+          }}
+        >
           <Input label="Entity kind" value={entityKind} onChange={setEntityKind} placeholder="e.g. opportunity" />
           <Input label="Entity id" value={entityId} onChange={setEntityId} placeholder="UUID / id" />
           <Select
@@ -94,6 +112,31 @@ export function AuditLogList(props: { onNavigate?: (path: string) => void }) {
               { value: 'deleted', label: 'deleted' },
             ]}
           />
+          <Input label="Event type" value={eventType} onChange={setEventType} placeholder="e.g. auth.login" />
+          <Select
+            label="Outcome"
+            value={outcome}
+            onChange={(v: any) => setOutcome(String(v || ''))}
+            options={[
+              { value: '', label: 'All' },
+              { value: 'success', label: 'success' },
+              { value: 'failure', label: 'failure' },
+              { value: 'denied', label: 'denied' },
+              { value: 'error', label: 'error' },
+            ]}
+          />
+          <Select
+            label="Actor type"
+            value={actorType}
+            onChange={(v: any) => setActorType(String(v || ''))}
+            options={[
+              { value: '', label: 'All' },
+              { value: 'user', label: 'user' },
+              { value: 'system', label: 'system' },
+              { value: 'api', label: 'api' },
+            ]}
+          />
+          <Input label="Session id" value={sessionId} onChange={setSessionId} placeholder="Session id" />
           <Input label="Search" value={q} onChange={setQ} placeholder="Search summary…" />
           <div style={{ display: 'flex', alignItems: 'end' }}>
             <Button variant="primary" onClick={load} disabled={loading}>
@@ -132,9 +175,10 @@ export function AuditLogList(props: { onNavigate?: (path: string) => void }) {
                   </div>
                 </div>
                 <div style={{ marginTop: 4, fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)' }}>
-                  {it.action} · {it.entityKind}
+                  {it.eventType || it.action} · {it.entityKind}
                   {it.entityId ? `:${it.entityId}` : ''}
                   {it.packName ? ` · ${it.packName}` : ''}
+                  {it.outcome ? ` · ${it.outcome}` : ''}
                   {it.correlationId ? ` · trace:${it.correlationId}` : ''}
                   {it.actorName || it.actorId ? ` · ${it.actorName || it.actorId}` : ''}
                 </div>

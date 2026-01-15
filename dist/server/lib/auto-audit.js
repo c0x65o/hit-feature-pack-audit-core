@@ -13,6 +13,7 @@ import { pgTable, uuid, varchar, text, jsonb, timestamp, index, pgEnum } from 'd
 import { getAuditContext, markAuditWrite } from './audit-context';
 // Local table definition (same as write-audit.ts)
 const auditActorTypeEnum = pgEnum('audit_actor_type', ['user', 'system', 'api']);
+const auditOutcomeEnum = pgEnum('audit_outcome', ['success', 'failure', 'denied', 'error']);
 const auditEvents = pgTable('audit_events', {
     id: uuid('id').primaryKey().defaultRandom(),
     entityKind: varchar('entity_kind', { length: 100 }).notNull(),
@@ -20,6 +21,17 @@ const auditEvents = pgTable('audit_events', {
     action: varchar('action', { length: 100 }).notNull(),
     summary: text('summary').notNull(),
     details: jsonb('details'),
+    changes: jsonb('changes'),
+    eventType: varchar('event_type', { length: 120 }),
+    outcome: auditOutcomeEnum('outcome'),
+    targetKind: varchar('target_kind', { length: 100 }),
+    targetId: varchar('target_id', { length: 255 }),
+    targetName: varchar('target_name', { length: 255 }),
+    sessionId: varchar('session_id', { length: 255 }),
+    authMethod: varchar('auth_method', { length: 50 }),
+    mfaMethod: varchar('mfa_method', { length: 50 }),
+    errorCode: varchar('error_code', { length: 120 }),
+    errorMessage: text('error_message'),
     actorId: varchar('actor_id', { length: 255 }),
     actorName: varchar('actor_name', { length: 255 }),
     actorType: auditActorTypeEnum('actor_type').notNull().default('user'),
@@ -206,6 +218,7 @@ export async function writeAutoAuditEvent(input) {
         const isSuccess = input.responseStatus >= 200 && input.responseStatus < 300;
         const isClientError = input.responseStatus >= 400 && input.responseStatus < 500;
         const isServerError = input.responseStatus >= 500;
+        const outcome = isSuccess ? 'success' : isServerError ? 'error' : isClientError ? 'denied' : 'failure';
         // Determine action based on method and outcome
         let action = methodToAction(method);
         if (!isSuccess) {
@@ -259,12 +272,24 @@ export async function writeAutoAuditEvent(input) {
             if (hint)
                 summary = `${summary} — ${truncateText(hint)}`;
         }
+        const errorMessage = !isSuccess ? extractErrorHint(input.responseBody) : null;
         await db.insert(auditEvents).values({
             entityKind,
             entityId,
             action,
             summary,
             details,
+            changes: null,
+            eventType: `api.${ctx.packName}.${method.toLowerCase()}`,
+            outcome,
+            targetKind: null,
+            targetId: null,
+            targetName: null,
+            sessionId: null,
+            authMethod: null,
+            mfaMethod: null,
+            errorCode: !isSuccess ? `http_${input.responseStatus}` : null,
+            errorMessage,
             actorId: input.actorId ?? ctx.actorId ?? 'system',
             actorName: null,
             actorType: 'user',

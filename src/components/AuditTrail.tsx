@@ -16,6 +16,9 @@ type AuditItem = {
   action: string;
   summary: string;
   details: { changes?: AuditChange[]; [key: string]: any } | null;
+  changes?: AuditChange[] | null;
+  eventType?: string | null;
+  outcome?: string | null;
   actorId: string | null;
   actorName: string | null;
   actorType: string;
@@ -108,11 +111,16 @@ export function AuditTrail(props: { entityKind: string; entityId: string }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {items.map((it) => {
-              const changes = it.details?.changes;
+              const changes = it.changes ?? it.details?.changes;
               const hasChanges = Array.isArray(changes) && changes.length > 0;
               const isExpanded = expandedIds.has(it.id);
               const actorLabel = it.actorName || it.actorId || it.actorType || 'unknown';
-              const metaBits = [it.action, actorLabel, it.correlationId ? `trace:${it.correlationId}` : null].filter(Boolean);
+              const metaBits = [
+                it.eventType || it.action,
+                it.outcome || null,
+                actorLabel,
+                it.correlationId ? `trace:${it.correlationId}` : null,
+              ].filter(Boolean);
 
               return (
                 <div

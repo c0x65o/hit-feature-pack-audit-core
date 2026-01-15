@@ -17,6 +17,10 @@ export function AuditLogList(props) {
     const [entityKind, setEntityKind] = React.useState('');
     const [entityId, setEntityId] = React.useState('');
     const [action, setAction] = React.useState('');
+    const [eventType, setEventType] = React.useState('');
+    const [outcome, setOutcome] = React.useState('');
+    const [actorType, setActorType] = React.useState('');
+    const [sessionId, setSessionId] = React.useState('');
     const [q, setQ] = React.useState('');
     const load = React.useCallback(async () => {
         setLoading(true);
@@ -29,6 +33,14 @@ export function AuditLogList(props) {
                 sp.set('entityId', entityId.trim());
             if (action.trim())
                 sp.set('action', action.trim());
+            if (eventType.trim())
+                sp.set('eventType', eventType.trim());
+            if (outcome.trim())
+                sp.set('outcome', outcome.trim());
+            if (actorType.trim())
+                sp.set('actorType', actorType.trim());
+            if (sessionId.trim())
+                sp.set('sessionId', sessionId.trim());
             if (q.trim())
                 sp.set('q', q.trim());
             sp.set('page', '1');
@@ -45,7 +57,7 @@ export function AuditLogList(props) {
         finally {
             setLoading(false);
         }
-    }, [entityKind, entityId, action, q]);
+    }, [entityKind, entityId, action, eventType, outcome, actorType, sessionId, q]);
     React.useEffect(() => {
         load();
     }, [load]);
@@ -53,15 +65,31 @@ export function AuditLogList(props) {
         { label: 'Admin', href: '/admin', icon: _jsx(ClipboardList, { size: 14 }) },
         { label: 'Audit Logs' },
     ];
-    return (_jsxs(Page, { title: "Audit Logs", breadcrumbs: breadcrumbs, onNavigate: navigate, actions: _jsx(Button, { variant: "secondary", onClick: load, disabled: loading, children: "Refresh" }), children: [_jsx(Card, { children: _jsxs("div", { style: { padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: 10 }, children: [_jsx(Input, { label: "Entity kind", value: entityKind, onChange: setEntityKind, placeholder: "e.g. opportunity" }), _jsx(Input, { label: "Entity id", value: entityId, onChange: setEntityId, placeholder: "UUID / id" }), _jsx(Select, { label: "Action", value: action, onChange: (v) => setAction(String(v || '')), options: [
+    return (_jsxs(Page, { title: "Audit Logs", breadcrumbs: breadcrumbs, onNavigate: navigate, actions: _jsx(Button, { variant: "secondary", onClick: load, disabled: loading, children: "Refresh" }), children: [_jsx(Card, { children: _jsxs("div", { style: {
+                        padding: 16,
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto',
+                        gap: 10,
+                    }, children: [_jsx(Input, { label: "Entity kind", value: entityKind, onChange: setEntityKind, placeholder: "e.g. opportunity" }), _jsx(Input, { label: "Entity id", value: entityId, onChange: setEntityId, placeholder: "UUID / id" }), _jsx(Select, { label: "Action", value: action, onChange: (v) => setAction(String(v || '')), options: [
                                 { value: '', label: 'All' },
                                 { value: 'created', label: 'created' },
                                 { value: 'updated', label: 'updated' },
                                 { value: 'deleted', label: 'deleted' },
-                            ] }), _jsx(Input, { label: "Search", value: q, onChange: setQ, placeholder: "Search summary\u2026" }), _jsx("div", { style: { display: 'flex', alignItems: 'end' }, children: _jsx(Button, { variant: "primary", onClick: load, disabled: loading, children: "Apply" }) })] }) }), error ? (_jsx(Alert, { variant: "error", title: "Failed to load audit", children: error })) : null, _jsx(Card, { children: _jsxs("div", { style: { padding: 16 }, children: [_jsx("div", { style: { fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)', marginBottom: 8 }, children: loading ? 'Loading…' : `${items.length} events` }), _jsxs("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 }, children: [items.map((it) => (_jsxs("div", { style: {
+                            ] }), _jsx(Input, { label: "Event type", value: eventType, onChange: setEventType, placeholder: "e.g. auth.login" }), _jsx(Select, { label: "Outcome", value: outcome, onChange: (v) => setOutcome(String(v || '')), options: [
+                                { value: '', label: 'All' },
+                                { value: 'success', label: 'success' },
+                                { value: 'failure', label: 'failure' },
+                                { value: 'denied', label: 'denied' },
+                                { value: 'error', label: 'error' },
+                            ] }), _jsx(Select, { label: "Actor type", value: actorType, onChange: (v) => setActorType(String(v || '')), options: [
+                                { value: '', label: 'All' },
+                                { value: 'user', label: 'user' },
+                                { value: 'system', label: 'system' },
+                                { value: 'api', label: 'api' },
+                            ] }), _jsx(Input, { label: "Session id", value: sessionId, onChange: setSessionId, placeholder: "Session id" }), _jsx(Input, { label: "Search", value: q, onChange: setQ, placeholder: "Search summary\u2026" }), _jsx("div", { style: { display: 'flex', alignItems: 'end' }, children: _jsx(Button, { variant: "primary", onClick: load, disabled: loading, children: "Apply" }) })] }) }), error ? (_jsx(Alert, { variant: "error", title: "Failed to load audit", children: error })) : null, _jsx(Card, { children: _jsxs("div", { style: { padding: 16 }, children: [_jsx("div", { style: { fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)', marginBottom: 8 }, children: loading ? 'Loading…' : `${items.length} events` }), _jsxs("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 }, children: [items.map((it) => (_jsxs("div", { style: {
                                         padding: 12,
                                         border: '1px solid var(--hit-border, #e5e7eb)',
                                         borderRadius: 8,
-                                    }, children: [_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', gap: 10 }, children: [_jsx("div", { style: { fontSize: 13, fontWeight: 600 }, children: it.summary }), _jsx("div", { style: { fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)', whiteSpace: 'nowrap' }, children: new Date(it.createdAt).toLocaleString() })] }), _jsxs("div", { style: { marginTop: 4, fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)' }, children: [it.action, " \u00B7 ", it.entityKind, it.entityId ? `:${it.entityId}` : '', it.packName ? ` · ${it.packName}` : '', it.correlationId ? ` · trace:${it.correlationId}` : '', it.actorName || it.actorId ? ` · ${it.actorName || it.actorId}` : ''] })] }, it.id))), !loading && items.length === 0 ? (_jsx("div", { style: { fontSize: 13, color: 'var(--hit-text-muted, #9ca3af)' }, children: "No events found." })) : null] })] }) })] }));
+                                    }, children: [_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', gap: 10 }, children: [_jsx("div", { style: { fontSize: 13, fontWeight: 600 }, children: it.summary }), _jsx("div", { style: { fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)', whiteSpace: 'nowrap' }, children: new Date(it.createdAt).toLocaleString() })] }), _jsxs("div", { style: { marginTop: 4, fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)' }, children: [it.eventType || it.action, " \u00B7 ", it.entityKind, it.entityId ? `:${it.entityId}` : '', it.packName ? ` · ${it.packName}` : '', it.outcome ? ` · ${it.outcome}` : '', it.correlationId ? ` · trace:${it.correlationId}` : '', it.actorName || it.actorId ? ` · ${it.actorName || it.actorId}` : ''] })] }, it.id))), !loading && items.length === 0 ? (_jsx("div", { style: { fontSize: 13, color: 'var(--hit-text-muted, #9ca3af)' }, children: "No events found." })) : null] })] }) })] }));
 }
 export default AuditLogList;

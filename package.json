@@ -1,6 +1,6 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

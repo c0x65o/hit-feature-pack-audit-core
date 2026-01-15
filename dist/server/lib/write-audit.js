@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, text, jsonb, timestamp, index, pgEnum } from 'd
 import { getAuditContext, markAuditWrite } from './audit-context';
 // Local shape so write path works even if host app hasn't regenerated feature-pack-schemas yet.
 const auditActorTypeEnum = pgEnum('audit_actor_type', ['user', 'system', 'api']);
+const auditOutcomeEnum = pgEnum('audit_outcome', ['success', 'failure', 'denied', 'error']);
 const auditEvents = pgTable('audit_events', {
     id: uuid('id').primaryKey().defaultRandom(),
     entityKind: varchar('entity_kind', { length: 100 }).notNull(),
@@ -9,6 +10,17 @@ const auditEvents = pgTable('audit_events', {
     action: varchar('action', { length: 100 }).notNull(),
     summary: text('summary').notNull(),
     details: jsonb('details'),
+    changes: jsonb('changes'),
+    eventType: varchar('event_type', { length: 120 }),
+    outcome: auditOutcomeEnum('outcome'),
+    targetKind: varchar('target_kind', { length: 100 }),
+    targetId: varchar('target_id', { length: 255 }),
+    targetName: varchar('target_name', { length: 255 }),
+    sessionId: varchar('session_id', { length: 255 }),
+    authMethod: varchar('auth_method', { length: 50 }),
+    mfaMethod: varchar('mfa_method', { length: 50 }),
+    errorCode: varchar('error_code', { length: 120 }),
+    errorMessage: text('error_message'),
     actorId: varchar('actor_id', { length: 255 }),
     actorName: varchar('actor_name', { length: 255 }),
     actorType: auditActorTypeEnum('actor_type').notNull().default('user'),
@@ -31,12 +43,26 @@ const auditEvents = pgTable('audit_events', {
  */
 export async function writeAuditEvent(dbOrTx, input) {
     const ctx = getAuditContext();
+    const eventType = input.eventType != null && String(input.eventType).trim()
+        ? String(input.eventType).trim()
+        : String(input.action);
     await dbOrTx.insert(auditEvents).values({
         entityKind: String(input.entityKind),
         entityId: input.entityId != null ? String(input.entityId) : null,
         action: String(input.action),
         summary: String(input.summary),
         details: input.details ?? null,
+        changes: input.changes ?? null,
+        eventType,
+        outcome: input.outcome ?? null,
+        targetKind: input.targetKind ?? null,
+        targetId: input.targetId ?? null,
+        targetName: input.targetName ?? null,
+        sessionId: input.sessionId ?? null,
+        authMethod: input.authMethod ?? null,
+        mfaMethod: input.mfaMethod ?? null,
+        errorCode: input.errorCode ?? null,
+        errorMessage: input.errorMessage ?? null,
         actorId: String(input.actorId),
         actorName: input.actorName ?? null,
         actorType: input.actorType ?? 'user',

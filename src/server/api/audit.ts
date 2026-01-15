@@ -47,9 +47,15 @@ async function fetchUserOrgScopeIds(db: any, userKey: string): Promise<{
  * - entityId?: string
  * - action?: string
  * - actorId?: string
+ * - actorType?: string
  * - correlationId?: string
  * - packName?: string
  * - method?: string (HTTP method: GET, POST, PUT, PATCH, DELETE)
+ * - eventType?: string
+ * - outcome?: string
+ * - targetKind?: string
+ * - targetId?: string
+ * - sessionId?: string
  * - q?: string (searches summary)
  * - from?: ISO string (createdAt >= from)
  * - to?: ISO string (createdAt <= to)
@@ -74,9 +80,15 @@ export async function GET(request: NextRequest) {
   const entityId = String(url.searchParams.get('entityId') || '').trim();
   const action = String(url.searchParams.get('action') || '').trim();
   const actorId = String(url.searchParams.get('actorId') || '').trim();
+  const actorType = String(url.searchParams.get('actorType') || '').trim();
   const correlationId = String(url.searchParams.get('correlationId') || '').trim();
   const packName = String(url.searchParams.get('packName') || '').trim();
   const method = String(url.searchParams.get('method') || '').trim().toUpperCase();
+  const eventType = String(url.searchParams.get('eventType') || '').trim();
+  const outcome = String(url.searchParams.get('outcome') || '').trim();
+  const targetKind = String(url.searchParams.get('targetKind') || '').trim();
+  const targetId = String(url.searchParams.get('targetId') || '').trim();
+  const sessionId = String(url.searchParams.get('sessionId') || '').trim();
   const q = String(url.searchParams.get('q') || '').trim();
   const from = String(url.searchParams.get('from') || '').trim();
   const to = String(url.searchParams.get('to') || '').trim();
@@ -157,9 +169,15 @@ export async function GET(request: NextRequest) {
   if (entityId) whereParts.push(eq((auditEvents as any).entityId, entityId));
   if (action) whereParts.push(eq((auditEvents as any).action, action));
   if (actorId) whereParts.push(eq((auditEvents as any).actorId, actorId));
+  if (actorType) whereParts.push(eq((auditEvents as any).actorType, actorType));
   if (correlationId) whereParts.push(eq((auditEvents as any).correlationId, correlationId));
   if (packName) whereParts.push(eq((auditEvents as any).packName, packName));
   if (method) whereParts.push(eq((auditEvents as any).method, method));
+  if (eventType) whereParts.push(eq((auditEvents as any).eventType, eventType));
+  if (outcome) whereParts.push(eq((auditEvents as any).outcome, outcome));
+  if (targetKind) whereParts.push(eq((auditEvents as any).targetKind, targetKind));
+  if (targetId) whereParts.push(eq((auditEvents as any).targetId, targetId));
+  if (sessionId) whereParts.push(eq((auditEvents as any).sessionId, sessionId));
   if (q) whereParts.push(ilike((auditEvents as any).summary, `%${q}%`));
 
   if (from) {

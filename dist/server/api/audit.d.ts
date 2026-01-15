@@ -9,9 +9,15 @@ export declare const runtime = "nodejs";
  * - entityId?: string
  * - action?: string
  * - actorId?: string
+ * - actorType?: string
  * - correlationId?: string
  * - packName?: string
  * - method?: string (HTTP method: GET, POST, PUT, PATCH, DELETE)
+ * - eventType?: string
+ * - outcome?: string
+ * - targetKind?: string
+ * - targetId?: string
+ * - sessionId?: string
  * - q?: string (searches summary)
  * - from?: ISO string (createdAt >= from)
  * - to?: ISO string (createdAt <= to)

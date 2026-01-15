@@ -66,11 +66,16 @@ export function AuditTrail(props) {
         });
     };
     return (_jsx(Card, { children: _jsxs("div", { style: { padding: 16 }, children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }, children: [_jsx("div", { style: { fontSize: 14, fontWeight: 600 }, children: "Audit Trail" }), _jsx("div", { style: { fontSize: 12, color: 'var(--hit-text-muted, #9ca3af)' }, children: loading ? 'Loading…' : `${items.length} events` })] }), error ? (_jsx("div", { style: { fontSize: 13, color: 'var(--hit-danger, #ef4444)' }, children: error })) : items.length === 0 && !loading ? (_jsx("div", { style: { fontSize: 13, color: 'var(--hit-text-muted, #9ca3af)' }, children: "No audit events yet." })) : (_jsx("div", { style: { display: 'flex', flexDirection: 'column', gap: 10 }, children: items.map((it) => {
-                        const changes = it.details?.changes;
+                        const changes = it.changes ?? it.details?.changes;
                         const hasChanges = Array.isArray(changes) && changes.length > 0;
                         const isExpanded = expandedIds.has(it.id);
                         const actorLabel = it.actorName || it.actorId || it.actorType || 'unknown';
-                        const metaBits = [it.action, actorLabel, it.correlationId ? `trace:${it.correlationId}` : null].filter(Boolean);
+                        const metaBits = [
+                            it.eventType || it.action,
+                            it.outcome || null,
+                            actorLabel,
+                            it.correlationId ? `trace:${it.correlationId}` : null,
+                        ].filter(Boolean);
                         return (_jsxs("div", { style: {
                                 padding: 12,
                                 border: '1px solid var(--hit-border, #e5e7eb)',
