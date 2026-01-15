@@ -10,7 +10,7 @@ routes:
     page: AuditLogList
     roles: []
     default_roles_allow: [admin]
-    authz: { entity: auditEvents, verb: read }
+    authz: { entity: auditEvents, verb: read, require_action: audit-core.audit-log.access, show_pages: true }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NAVIGATION - Sidebar/topbar items
@@ -68,6 +68,12 @@ dependencies:
 # ─────────────────────────────────────────────────────────────────────────────
 permissions:
   actions:
+    # Audit pages with explicit access toggles.
+    - key: audit-core.audit-log.access
+      label: "Audit: Audit Log"
+      description: "Access the system audit log."
+      default_enabled: false
+
     # Scope Policy Tree: audit-core (global).
     #
     # Scope modes:
