@@ -72,7 +72,7 @@ permissions:
     #
     # Scope modes:
     # - none: deny all access for this verb/entity (hide pages + block APIs)
-    # - any: ignore scope (read everything)
+    # - all: ignore scope (read everything)
     # - own: only events where actorId matches current user
     # - ldd: events where actorId matches current user OR the actor's user has matching L/D/D
     #
@@ -81,8 +81,8 @@ permissions:
       label: "Audit Core Read Scope = None"
       description: "Deny all audit event read access."
       default_enabled: false
-    - key: audit-core.read.scope.any
-      label: "Audit Core Read Scope = Any"
+    - key: audit-core.read.scope.all
+      label: "Audit Core Read Scope = All"
       description: "Read all audit events regardless of actor."
       default_enabled: false
     - key: audit-core.read.scope.own
