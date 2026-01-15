@@ -1,6 +1,6 @@
 {
   "name": "@hit/feature-pack-audit-core",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "Audit core feature pack",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -52,9 +52,6 @@
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {
-    "@hit/feature-pack-auth-core": "file:../hit-feature-pack-auth-core"
-  },
   "peerDependencies": {
     "@hit/feature-pack-erp-shell-core": "*",
     "@hit/feature-pack-auth-core": "*",
@@ -74,6 +71,7 @@
     }
   },
   "devDependencies": {
+    "@hit/feature-pack-auth-core": "file:../hit-feature-pack-auth-core",
     "@hit/feature-pack-stubs": "file:../../../packages/hit-feature-pack-stubs",
     "@hit/feature-pack-erp-shell-core": "file:../hit-feature-pack-erp-shell-core",
     "@hit/sdk": "file:../../../hit-sdks/hit-sdk-typescript",
