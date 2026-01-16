@@ -19,10 +19,6 @@ export function extractUserFromRequest(request: NextRequest): User | null {
     if (authHeader?.startsWith('Bearer ')) token = authHeader.slice(7);
   }
 
-  // Some deployments set x-user-id (trusted proxy). If present, treat as authenticated.
-  const xUserId = request.headers.get('x-user-id');
-  if (xUserId) return { sub: xUserId, email: '', roles: [] };
-
   if (!token) return null;
 
   try {
