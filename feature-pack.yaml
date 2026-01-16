@@ -66,32 +66,5 @@ dependencies:
 # ─────────────────────────────────────────────────────────────────────────────
 # PERMISSIONS - Action definitions (for admin-core permissions UI + runtime checks)
 # ─────────────────────────────────────────────────────────────────────────────
-permissions:
-  actions:
-    # Audit pages with explicit access toggles.
-    - key: audit-core.audit-log.access
-      label: "Audit: Audit Log"
-      description: "Access the system audit log."
-      default_enabled: false
-
-    # Scope Policy Tree: audit-core (global).
-    #
-    # Scope modes:
-    # - none: deny all access for this verb/entity (hide pages + block APIs)
-    # - all: ignore scope (read everything)
-    # - own: only events where actorId matches current user
-    # - ldd: events where actorId matches current user OR the actor's user has matching L/D/D
-    #
-    # These are mutually exclusive per node; the Security Groups UI renders them as dropdowns.
-    - key: audit-core.read.scope.none
-      label: "Audit Core Read Scope = None"
-      description: "Deny all audit event read access."
-      default_enabled: false
-    - key: audit-core.read.scope.all
-      label: "Audit Core Read Scope = All"
-      description: "Read all audit events regardless of actor."
-      default_enabled: false
-    - key: audit-core.read.scope.own
-      label: "Audit Core Read Scope = Own"
-      description: "Read only audit events where you are the actor."
-      default_enabled: false
+# Permissions are schema-driven and live under:
+#   schema/permissions.yaml
